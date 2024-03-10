@@ -21,7 +21,7 @@ def load_image_create_canvas(source):
     # Se selecciona una imagen para pintar
     # Esto seria por X cantidad de veces hasta que se vean igual
     brushes = load_brushes()
-    for i in range(10):
+    for i in range(100):
         brush = resize_brush(random.choice(brushes))
         brush = change_color(brush)
         paint(canvas, brush)
