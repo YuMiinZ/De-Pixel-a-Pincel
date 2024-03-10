@@ -27,7 +27,7 @@ class DNA:
     def mutate(self):
         choices = [self.resize_brush(self.brush, 0.5, 0.8),
            self.change_color(self.brush, -100, 100),
-           self.resize_brush(self.change_color(self.brush, -100, 100), 0.5, 0.8)]
+           self.resize_brush(self.change_color(self.brush, -100, 100), 0.3, 0.8)]
         self.brush = random.choice(choices)
 
     def crossover(self, parent1, parent2, img, brushesList):
