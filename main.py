@@ -29,14 +29,15 @@ def load_image_create_canvas(source):
     cv2.destroyAllWindows()
 
 def resize_brush(brush):
-    new_height = random.randint(int(brush.shape[0] * 0.5), int(brush.shape[0] * 1.5))
-    new_width = random.randint(int(brush.shape[1] * 0.5), int(brush.shape[1] * 1.5))
+    new_height = random.randint(int(brush.shape[0] * 0.3), int(brush.shape[0] * 0.3))
+    new_width = random.randint(int(brush.shape[1] * 0.3), int(brush.shape[1] * 0.3))
     return cv2.resize(brush, (new_width, new_height))
 
 def change_color(brush):
     # Apply random brightness shift to each pixel
     brightness_shift = random.randint(-100, 100)
     return np.clip(brush.astype(int) + brightness_shift, 0, 255).astype(np.uint8)
+
 
 
 # Pinta el brochazo en el canvas
