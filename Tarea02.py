@@ -130,7 +130,7 @@ class GeneticAlgorithm:
                 
                 if random.random() < 0.1:
                     print("Hijo mutará") # Borrarlo después
-                    #child.mutate(self.canvas) 
+                    child.mutate(self.canvas) 
                 new_population.append(child)
             self.current_population = new_population
             self.canvas.paint(self.current_population)
