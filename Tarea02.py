@@ -7,7 +7,7 @@ class DNA:
     def __init__(self, targetImage, brushesList):  
         self.target_image = cv2.cvtColor(targetImage, cv2.COLOR_BGR2GRAY)
         self.brush = self.resize_brush(random.choice(brushesList), 0.1, 0.3)
-        self.color = self.change_color(self.brush, -100, 100)
+        self.color = self.change_color(self.brush, 0, 255)
         self.brush = self.color
         self.fitness = None
         self.xy_position = None
@@ -39,7 +39,7 @@ class DNA:
             self.brush = random.choice(choices)
 
         if mutation_type in ['position', 'both']:
-            displacement = (random.randint(-100, 100), random.randint(-100, 100))
+            displacement = (random.randint(-200, 200), random.randint(-200, 200))
             self.xy_position = (max(0, min(self.xy_position[0] + displacement[0], canvas.width - self.brush.shape[1])),
                                 max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
 
@@ -61,7 +61,7 @@ class DNA:
         child.color = cv2.addWeighted(parent1_color_resized, alpha, parent2_color_resized, 1 - alpha, 0) #Combinar colores de los padres
 
         # Heredar la posición de uno de los padres con un desplazamiento aleatorio dentro del lienzo
-        displacement = (random.randint(-200, 200), random.randint(-200, 200)) 
+        displacement = (random.randint(-70, 70), random.randint(-70, 70)) 
         if random.random() < 0.5: 
             child.xy_position = (max(0, min(parent1.xy_position[0] + displacement[0], canvas.width - child.brush.shape[1])),
                                 max(0, min(parent1.xy_position[1] + displacement[1], canvas.height - child.brush.shape[0])))
@@ -128,9 +128,9 @@ class GeneticAlgorithm:
                 parent2 = random.choice(best_individuals)
                 child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
                 
-                if random.random() < 0.3:
+                if random.random() < 0.1:
                     print("Hijo mutará") # Borrarlo después
-                    child.mutate(self.canvas) 
+                    #child.mutate(self.canvas) 
                 new_population.append(child)
             self.current_population = new_population
             self.canvas.paint(self.current_population)
@@ -155,4 +155,6 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm.initialize_population()
 
 img = "Images/pokemon.jpg"
-start(img, 10,1)
+populationSize = 10
+maxGenerations = 1
+start(img, populationSize, maxGenerations)
