@@ -10,7 +10,7 @@ class DNA:
         self.color = self.change_color(self.brush, -100, 100)
         self.brush = self.color
         self.fitness = None
-
+        self.xy_position = None
 
     def resize_brush(self, brush, minRange, maxRange):
         new_height = random.randint(int(brush.shape[0] * minRange), int(brush.shape[0] * maxRange))
@@ -21,16 +21,29 @@ class DNA:
         brightness_shift = random.randint(minRange, maxRange)
         return np.clip(brush.astype(int) + brightness_shift, 0, 255).astype(np.uint8)
     
+    def generate_random_position(self, canvas_height, canvas_width):
+        max_x = canvas_width - self.brush.shape[1]
+        max_y = canvas_height - self.brush.shape[0]
+        self.xy_position = (random.randint(0, max_x), random.randint(0, max_y))
+    
     def calculate_fitness(self):
         self.fitness = random.randint(0,100)
     
-    def mutate(self):
-        choices = [self.resize_brush(self.brush, 0.5, 0.8),
-           self.change_color(self.brush, -100, 100),
-           self.resize_brush(self.change_color(self.brush, -100, 100), 0.3, 0.8)]
-        self.brush = random.choice(choices)
+    def mutate(self, canvas):
+        mutation_type = random.choice(["brush", "position", "both"])
 
-    def crossover(self, parent1, parent2, img, brushesList):
+        if mutation_type in ['brush', 'both']:
+            choices = [self.resize_brush(self.brush, 0.5, 0.8),
+                    self.change_color(self.brush, -100, 100),
+                    self.resize_brush(self.change_color(self.brush, -100, 100), 0.3, 0.8)]
+            self.brush = random.choice(choices)
+
+        if mutation_type in ['position', 'both']:
+            displacement = (random.randint(-100, 100), random.randint(-100, 100))
+            self.xy_position = (max(0, min(self.xy_position[0] + displacement[0], canvas.width - self.brush.shape[1])),
+                                max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
+
+    def crossover(self, parent1, parent2, img, brushesList, canvas):
         child = DNA(img, brushesList)
 
         # Escoger de manera aleatoria la forma del pincel, si del parent1 o del parent2
@@ -47,6 +60,15 @@ class DNA:
         alpha = random.uniform(0, 1)  # Factor de mezcla para el color
         child.color = cv2.addWeighted(parent1_color_resized, alpha, parent2_color_resized, 1 - alpha, 0) #Combinar colores de los padres
 
+        # Heredar la posición de uno de los padres con un desplazamiento aleatorio dentro del lienzo
+        displacement = (random.randint(-200, 200), random.randint(-200, 200)) 
+        if random.random() < 0.5: 
+            child.xy_position = (max(0, min(parent1.xy_position[0] + displacement[0], canvas.width - child.brush.shape[1])),
+                                max(0, min(parent1.xy_position[1] + displacement[1], canvas.height - child.brush.shape[0])))
+        else:
+            child.xy_position = (max(0, min(parent2.xy_position[0] + displacement[0], canvas.width - child.brush.shape[1])),
+                                max(0, min(parent2.xy_position[1] + displacement[1], canvas.height - child.brush.shape[0])))
+
         return child
 
 class Canvas:
@@ -56,10 +78,7 @@ class Canvas:
 
     def paint(self, population):
         for individual in population:
-            max_x = self.canvas.shape[1] - individual.brush.shape[1]
-            max_y = self.canvas.shape[0] - individual.brush.shape[0]
-            paste_x = random.randint(0, max_x)
-            paste_y = random.randint(0, max_y)
+            paste_x, paste_y = individual.xy_position 
 
             # Pinta en la posicion definida 
             self.canvas[paste_y:paste_y + individual.brush.shape[0], paste_x:paste_x + individual.brush.shape[1]] = individual.brush
@@ -85,6 +104,7 @@ class GeneticAlgorithm:
     def initialize_population(self): #Inicializa la primera población con características aleatorias
         for i in range(self.population_size):
             new_individual = DNA(self.target_image, self.brushesList)
+            new_individual.generate_random_position(self.canvas.height, self.canvas.width)
             self.current_population.append(new_individual)
         self.canvas.paint(self.current_population)
         self.evolve() #Al finalizar la población inicial, se comienza con las generaciones (evolución)
@@ -106,11 +126,11 @@ class GeneticAlgorithm:
             for _ in range(random.randint(10,20)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
-                child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList)
+                child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
                 
                 if random.random() < 0.3:
                     print("Hijo mutará") # Borrarlo después
-                    child.mutate() 
+                    child.mutate(self.canvas) 
                 new_population.append(child)
             self.current_population = new_population
             self.canvas.paint(self.current_population)
