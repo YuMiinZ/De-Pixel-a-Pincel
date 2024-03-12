@@ -2,6 +2,7 @@ import numpy as np
 import os
 import random
 import cv2
+from fiteness import *
 
 class DNA:
     def __init__(self, targetImage, brushesList):  
@@ -27,19 +28,20 @@ class DNA:
         self.xy_position = (random.randint(0, max_x), random.randint(0, max_y))
     
     def calculate_fitness(self):
-        self.fitness = random.randint(0,100)
+        calcularFitnes(self.color,self.xy_position,img)
+        self.fitness = calcularFitnes(self.color,self.xy_position,img)
     
     def mutate(self, canvas):
         mutation_type = random.choice(["brush", "position", "both"])
 
         if mutation_type in ['brush', 'both']:
             choices = [self.resize_brush(self.brush, 0.5, 0.8),
-                    self.change_color(self.brush, -100, 100),
-                    self.resize_brush(self.change_color(self.brush, -100, 100), 0.3, 0.8)]
+                    self.change_color(self.brush, 1, 255),
+                    self.resize_brush(self.change_color(self.brush, 1, 255), 0.3, 0.8)]
             self.brush = random.choice(choices)
 
         if mutation_type in ['position', 'both']:
-            displacement = (random.randint(-200, 200), random.randint(-200, 200))
+            displacement = (random.randint(-50, 50), random.randint(-50, 50))
             self.xy_position = (max(0, min(self.xy_position[0] + displacement[0], canvas.width - self.brush.shape[1])),
                                 max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
 
@@ -84,7 +86,7 @@ class Canvas:
             self.canvas[paste_y:paste_y + individual.brush.shape[0], paste_x:paste_x + individual.brush.shape[1]] = individual.brush
 
             cv2.imshow('Image', self.canvas)
-            cv2.waitKey(500)
+            #cv2.waitKey(500)
         cv2.waitKey(0)
 
 class GeneticAlgorithm:
@@ -123,7 +125,7 @@ class GeneticAlgorithm:
                 print(f"  Mejor individuo {idx}: Fitness = {individual.fitness}")
 
             new_population = []
-            for _ in range(random.randint(10,20)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
+            for _ in range(random.randint(1,2)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
                 child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
@@ -154,7 +156,7 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm = GeneticAlgorithm(img , populationSize, maxGenerations, brushes_list)
     startGeneticAlgorithm.initialize_population()
 
-img = "Images/pokemon.jpg"
-populationSize = 10
-maxGenerations = 1
+img = "Images/PALETA.jpg"
+populationSize = 5
+maxGenerations = 10
 start(img, populationSize, maxGenerations)
