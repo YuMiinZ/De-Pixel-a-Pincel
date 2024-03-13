@@ -16,6 +16,9 @@ class DNA:
     def resize_brush(self, brush, minRange, maxRange):
         new_height = random.randint(int(brush.shape[0] * minRange), int(brush.shape[0] * maxRange))
         new_width = random.randint(int(brush.shape[1] * minRange), int(brush.shape[1] * maxRange))
+
+        new_height = max(1, new_height)
+        new_width = max(1, new_width)
         return cv2.resize(brush, (new_width, new_height))
     
     def change_color(self, brush, minRange, maxRange):
@@ -35,9 +38,9 @@ class DNA:
         mutation_type = random.choice(["brush", "position", "both"])
 
         if mutation_type in ['brush', 'both']:
-            choices = [self.resize_brush(self.brush, 0.5, 0.8),
+            choices = [self.resize_brush(self.brush, 0.5, 1),
                     self.change_color(self.brush, 1, 255),
-                    self.resize_brush(self.change_color(self.brush, 1, 255), 0.3, 0.8)]
+                    self.resize_brush(self.change_color(self.brush, 1, 255), 0.5, 1)]
             self.brush = random.choice(choices)
 
         if mutation_type in ['position', 'both']:
@@ -49,7 +52,8 @@ class DNA:
         child = DNA(img, brushesList)
 
         # Escoger de manera aleatoria la forma del pincel, si del parent1 o del parent2
-        child.brush = random.choice([self.resize_brush(parent1.brush, 0.5, 1), self.resize_brush(parent2.brush, 0.5, 1)])
+        #child.brush = random.choice([self.resize_brush(parent1.brush, 0.1, 1.5), self.resize_brush(parent2.brush, 0.1, 1.5)])
+        child.brush = random.choice([parent1.brush, parent2.brush])
 
         # Redimensionar las imágenes de los padres para que tengan las mismas dimensiones
         common_height = min(parent1.color.shape[0], parent2.color.shape[0])
@@ -120,18 +124,18 @@ class GeneticAlgorithm:
             # Selección de los mejores individuos de la generación actual
             best_individuals = self.select_parents(0.5)
 
-            print(f"Generación {generation + 1}:") # Borrarlo después
+            """print(f"Generación {generation + 1}:") # Borrarlo después
             for idx, individual in enumerate(best_individuals, start=1):
-                print(f"  Mejor individuo {idx}: Fitness = {individual.fitness}")
+                print(f"  Mejor individuo {idx}: Fitness = {individual.fitness}")"""
 
             new_population = []
-            for _ in range(random.randint(1,2)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
+            for _ in range(random.randint(10,20)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
                 child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
                 
                 if random.random() < 0.1:
-                    print("Hijo mutará") # Borrarlo después
+                    #("Hijo mutará") # Borrarlo después
                     child.mutate(self.canvas) 
                 new_population.append(child)
             self.current_population = new_population
@@ -143,7 +147,7 @@ def load_brushes():
     brushes = []
     for filename in os.listdir('Brushes/'):
         brush = cv2.imread('Brushes/' + filename, cv2.IMREAD_GRAYSCALE)
-        print(filename)
+        #print(filename)
         brushes.append(brush)
     return brushes
 
@@ -157,6 +161,6 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm.initialize_population()
 
 img = "Images/PALETA.jpg"
-populationSize = 5
+populationSize = 10
 maxGenerations = 10
 start(img, populationSize, maxGenerations)

@@ -46,14 +46,14 @@ def extractColor(matriz):
 
 
 def calcularFitnes(matrizBrush,posicionBrush,img):#posicionBrush con coordenadas x,y
-    print("color:------------------------------------------------------------------------------------")
+    #print("color:------------------------------------------------------------------------------------")
     colorBrush = extractColor(matrizBrush)
-    print(colorBrush)
-    print("pos:")
-    print(posicionBrush)
-    print("tam:")
+    #print(colorBrush)
+    #print("pos:")
+    #print(posicionBrush)
+    #print("tam:")
     sizeBrush = np.array(matrizBrush).shape # y , x
-    print(sizeBrush)
+    #print(sizeBrush)
 
     I = Image.open(img)
     I = I.convert('L')
@@ -64,8 +64,8 @@ def calcularFitnes(matrizBrush,posicionBrush,img):#posicionBrush con coordenadas
 
 
     pixeles = aplicar_comparePixel(cuadro,colorBrush)
-    print("fitnes total:")
-    print(pixeles)
+    #print("fitnes total:")
+    #print(pixeles)
     #plt.imshow(np.asarray(cuadro),cmap='gray',interpolation='nearest')
     #plt.show()
     #print(pixeles)
