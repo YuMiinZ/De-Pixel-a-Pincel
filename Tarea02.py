@@ -8,7 +8,7 @@ class DNA:
     def __init__(self, targetImage, brushesList):  
         self.target_image = cv2.cvtColor(targetImage, cv2.COLOR_BGR2GRAY)
         self.brush = self.resize_brush(random.choice(brushesList), 0.1, 0.3)
-        self.color = self.change_color(self.brush, 0, 255)
+        self.color = self.change_color(self.brush, -20, 20)
         self.brush = self.color
         self.fitness = None
         self.xy_position = None
@@ -39,8 +39,8 @@ class DNA:
 
         if mutation_type in ['brush', 'both']:
             choices = [self.resize_brush(self.brush, 0.5, 1),
-                    self.change_color(self.brush, 1, 255),
-                    self.resize_brush(self.change_color(self.brush, 1, 255), 0.5, 1)]
+                    self.change_color(self.brush, -20, 20),
+                    self.resize_brush(self.change_color(self.brush, -20, 20), 0.5, 1)]
             self.brush = random.choice(choices)
 
         if mutation_type in ['position', 'both']:
