@@ -5,14 +5,14 @@ import cv2
 from fiteness import *
 
 class DNA:
-    def __init__(self, targetImage, brushesList):  
+    def __init__(self, targetImage, brushesList, num_sections):
         self.target_image = cv2.cvtColor(targetImage, cv2.COLOR_BGR2GRAY)
         self.brush = self.resize_brush(random.choice(brushesList), 0.1, 0.3)
-        #self.color = self.change_color(self.brush, -200, 200)
-        self.color, self.mask = self.change_brush_color()
+        self.color = self.change_color(self.brush, -200, 200)
         self.brush = self.color
         self.fitness = None
         self.xy_position = None
+        self.num_sections = num_sections
 
     def resize_brush(self, brush, minRange, maxRange):
         new_height = random.randint(int(brush.shape[0] * minRange), int(brush.shape[0] * maxRange))
@@ -26,23 +26,29 @@ class DNA:
         brightness_shift = random.randint(minRange, maxRange)
         return np.clip(brush.astype(int) + brightness_shift, 0, 255).astype(np.uint8)
     
-    def change_brush_color(self):
-        # Generar un tono de gris aleatorio
-        random_gray = random.randint(0, 255)
-        colored_brush = np.full_like(self.brush, random_gray)
-        self.color = colored_brush
-        # Crear una máscara usando el color negro como fondo
-        mask = cv2.threshold(self.brush, 1, 255, cv2.THRESH_BINARY)[1]
-        return colored_brush, mask
-    
     def generate_random_position(self, canvas_height, canvas_width):
         max_x = canvas_width - self.brush.shape[1]
         max_y = canvas_height - self.brush.shape[0]
         self.xy_position = (random.randint(0, max_x), random.randint(0, max_y))
     
     def calculate_fitness(self):
-        calcularFitnes(self.color,self.xy_position,img)
-        self.fitness = calcularFitnes(self.color,self.xy_position,img)
+        fitness = 0
+        height, width = self.target_image.shape
+        section_height = height // self.num_sections
+        section_width = width // self.num_sections
+
+        for i in range(self.num_sections):
+            for j in range(self.num_sections):
+                start_x = j * section_width
+                end_x = start_x + section_width
+                start_y = i * section_height
+                end_y = start_y + section_height
+
+                section_image = self.target_image[start_y:end_y, start_x:end_x]
+                section_brush = self.color[start_y:end_y, start_x:end_x]
+                fitness += calcularFitnes(section_brush, self.xy_position, section_image)
+
+        self.fitness = fitness
     
     def mutate(self, canvas):
         mutation_type = random.choice(["brush", "position", "both"])
@@ -58,28 +64,12 @@ class DNA:
             self.xy_position = (max(0, min(self.xy_position[0] + displacement[0], canvas.width - self.brush.shape[1])),
                                 max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
 
-    def mutate2(self, canvas):
-        mutation_type = random.choice(["brush", "position", "both"])
-        new_color, _ = self.change_brush_color()
-
-        if mutation_type in ['brush', 'both']:
-            self.brush = random.choice([self.resize_brush(self.brush, 0.5, 1), new_color])
-
-        if mutation_type in ['position', 'both']:
-            displacement = (random.randint(-50, 50), random.randint(-50, 50))
-            self.xy_position = (max(0, min(self.xy_position[0] + displacement[0], canvas.width - self.brush.shape[1])),
-                                max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
-
-        # Asegurarse de actualizar también la máscara después de la mutación
-        _, self.mask = self.change_brush_color()
-        
-            
     def crossover(self, parent1, parent2, img, brushesList, canvas):
-        child = DNA(img, brushesList)
+        child = DNA(img, brushesList, self.num_sections)
 
         # Escoger de manera aleatoria la forma del pincel, si del parent1 o del parent2
         #child.brush = random.choice([self.resize_brush(parent1.brush, 0.1, 1.5), self.resize_brush(parent2.brush, 0.1, 1.5)])
-#        child.brush = random.choice([parent1.brush, parent2.brush])
+        child.brush = random.choice([parent1.brush, parent2.brush])
 
         # Redimensionar las imágenes de los padres para que tengan las mismas dimensiones
         common_height = min(parent1.color.shape[0], parent2.color.shape[0])
@@ -112,28 +102,21 @@ class Canvas:
         for individual in population:
             paste_x, paste_y = individual.xy_position 
 
-            # Aplica la brocha usando la máscara para evitar el fondo
-            brush_height, brush_width = individual.brush.shape[:2]
-            mask_inv = cv2.bitwise_not(individual.mask)
-            roi = self.canvas[paste_y:paste_y+brush_height, paste_x:paste_x+brush_width]
-            individual.brush = cv2.bitwise_and(individual.brush, individual.brush, mask=individual.mask)
-            bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
-            dst = cv2.add(bg, individual.brush)
+            # Pinta en la posicion definida 
+            self.canvas[paste_y:paste_y + individual.brush.shape[0], paste_x:paste_x + individual.brush.shape[1]] = individual.brush
 
-            # Actualiza el lienzo con la brocha aplicada
-            self.canvas[paste_y:paste_y+brush_height, paste_x:paste_x+brush_width] = dst
-
-        # Muestra el lienzo después de pintar toda la población
-        cv2.imshow('Image', self.canvas)
+            cv2.imshow('Image', self.canvas)
+            #cv2.waitKey(500)
         cv2.waitKey(0)
 
 class GeneticAlgorithm:
-    def __init__(self, targetImage, populationSize, maxGenerations, brushesList):
+    def __init__(self, targetImage, populationSize, maxGenerations, brushesList, num_sections):
         self.target_image = targetImage
         self.population_size = populationSize
         self.max_generations = maxGenerations
         self.brushesList = brushesList
         self.current_population = []
+        self.num_sections = num_sections
         self.canvas = Canvas(targetImage)
 
     def select_parents(self, percentage): # Selección de los mejores padres para la evolución
@@ -143,7 +126,7 @@ class GeneticAlgorithm:
 
     def initialize_population(self): #Inicializa la primera población con características aleatorias
         for i in range(self.population_size):
-            new_individual = DNA(self.target_image, self.brushesList)
+            new_individual = DNA(self.target_image, self.brushesList, self.num_sections)
             new_individual.generate_random_position(self.canvas.height, self.canvas.width)
             self.current_population.append(new_individual)
         self.canvas.paint(self.current_population)
@@ -167,17 +150,13 @@ class GeneticAlgorithm:
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
                 child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
-                new_population.append(child)
-
+                
                 if random.random() < 0.1:
-                    print("Hijo mutará") # Borrarlo después
-                    new_individual = DNA(self.target_image, self.brushesList)
-                    new_individual.generate_random_position(self.canvas.height, self.canvas.width)
-                    self.current_population.append(new_individual)
-                    new_population.append(new_individual)
+                    #("Hijo mutará") # Borrarlo después
+                    child.mutate(self.canvas) 
+                new_population.append(child)
             self.current_population = new_population
             self.canvas.paint(self.current_population)
-            
 
 # Carga todos los brochazos en un array
 def load_brushes():
@@ -188,16 +167,16 @@ def load_brushes():
         brushes.append(brush)
     return brushes
 
-
-def start(targetImage, populationSize, maxGenerations):
+def start(targetImage, populationSize, maxGenerations, num_sections):
     brushes_list = load_brushes()
 
     img = cv2.imread(targetImage)
 
-    startGeneticAlgorithm = GeneticAlgorithm(img , populationSize, maxGenerations, brushes_list)
+    startGeneticAlgorithm = GeneticAlgorithm(img , populationSize, maxGenerations, brushes_list, num_sections)
     startGeneticAlgorithm.initialize_population()
 
 img = "Images/PALETA.jpg"
 populationSize = 10
 maxGenerations = 10
-start(img, populationSize, maxGenerations)
+num_sections = 5
+start(img, populationSize, maxGenerations, num_sections)

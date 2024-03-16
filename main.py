@@ -21,7 +21,7 @@ def load_image_create_canvas(source):
     # Se selecciona una imagen para pintar
     # Esto seria por X cantidad de veces hasta que se vean igual
     brushes = load_brushes()
-    for i in range(100):
+    for i in range(10):
         brush = resize_brush(random.choice(brushes))
         brush = change_color(brush)
         paint(canvas, brush)
@@ -35,7 +35,7 @@ def resize_brush(brush):
 
 def change_color(brush):
     # Apply random brightness shift to each pixel
-    brightness_shift = random.randint(-100, 100)
+    brightness_shift = random.randint(200, 200)
     return np.clip(brush.astype(int) + brightness_shift, 0, 255).astype(np.uint8)
 
 
