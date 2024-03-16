@@ -167,12 +167,14 @@ class GeneticAlgorithm:
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
                 child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
+                child.resize_brush(child.brush, 0.5, 1.5)
                 new_population.append(child)
 
                 if random.random() < 0.1:
-                    print("Hijo mutará") # Borrarlo después
+                    print("Hijo mutará") # Borrarlo después 
                     new_individual = DNA(self.target_image, self.brushesList)
                     new_individual.generate_random_position(self.canvas.height, self.canvas.width)
+                    new_individual.resize_brush(new_individual.brush, 0.5, 1)
                     self.current_population.append(new_individual)
                     new_population.append(new_individual)
             self.current_population = new_population
@@ -197,7 +199,7 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm = GeneticAlgorithm(img , populationSize, maxGenerations, brushes_list)
     startGeneticAlgorithm.initialize_population()
 
-img = "Images/PALETA.jpg"
-populationSize = 10
-maxGenerations = 10
+img = "Images/pokemon.jpg"
+populationSize = 100
+maxGenerations = 1000
 start(img, populationSize, maxGenerations)
