@@ -41,7 +41,6 @@ class DNA:
         self.xy_position = (random.randint(0, max_x), random.randint(0, max_y))
     
     def calculate_fitness(self):
-        calcularFitnes(self.color,self.xy_position,img)
         self.fitness = calcularFitnes(self.color,self.xy_position,img)
     
     def mutate(self, canvas):
@@ -73,7 +72,12 @@ class DNA:
         # Asegurarse de actualizar también la máscara después de la mutación
         _, self.mask = self.change_brush_color()
         
-            
+    def generate_mask_from_brush(self, brush):
+        # Crear una máscara del mismo tamaño que la brocha, utilizando el color negro como fondo
+        mask = cv2.threshold(brush, 1, 255, cv2.THRESH_BINARY)[1]
+        return mask
+
+
     def crossover(self, parent1, parent2, img, brushesList, canvas):
         child = DNA(img, brushesList)
 
@@ -90,7 +94,9 @@ class DNA:
 
         # Aplicar crossover en el color del pincel
         alpha = random.uniform(0, 1)  # Factor de mezcla para el color
-        child.color = cv2.addWeighted(parent1_color_resized, alpha, parent2_color_resized, 1 - alpha, 0) #Combinar colores de los padres
+        child_color  = cv2.addWeighted(parent1_color_resized, alpha, parent2_color_resized, 1 - alpha, 0) #Combinar colores de los padres
+        child.brush = child_color
+        child.mask = self.generate_mask_from_brush(child_color)
 
         # Heredar la posición de uno de los padres con un desplazamiento aleatorio dentro del lienzo
         displacement = (random.randint(-70, 70), random.randint(-70, 70)) 
@@ -156,7 +162,7 @@ class GeneticAlgorithm:
                 individuo.calculate_fitness()
 
             # Selección de los mejores individuos de la generación actual
-            best_individuals = self.select_parents(0.5)
+            best_individuals = self.select_parents(0.1)
 
             """print(f"Generación {generation + 1}:") # Borrarlo después
             for idx, individual in enumerate(best_individuals, start=1):
@@ -174,7 +180,7 @@ class GeneticAlgorithm:
                     print("Hijo mutará") # Borrarlo después 
                     new_individual = DNA(self.target_image, self.brushesList)
                     new_individual.generate_random_position(self.canvas.height, self.canvas.width)
-                    new_individual.resize_brush(new_individual.brush, 0.5, 1)
+                    new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
                     self.current_population.append(new_individual)
                     new_population.append(new_individual)
             self.current_population = new_population
@@ -199,7 +205,7 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm = GeneticAlgorithm(img , populationSize, maxGenerations, brushes_list)
     startGeneticAlgorithm.initialize_population()
 
-img = "Images/pokemon.jpg"
-populationSize = 100
+img = "Images/PALETA.jpg"
+populationSize = 30
 maxGenerations = 1000
 start(img, populationSize, maxGenerations)
