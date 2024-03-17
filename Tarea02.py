@@ -9,7 +9,7 @@ class DNA:
         self.target_image = cv2.cvtColor(targetImage, cv2.COLOR_BGR2GRAY)
         self.brush = self.resize_brush(random.choice(brushesList), 0.1, 0.3)
         #self.color = self.change_color(self.brush, -200, 200)
-        self.color, self.mask = self.change_brush_color()
+        self.color, self.mask = self.change_brush_color(0,255)
         self.brush = self.color
         self.fitness = None
         self.xy_position = None
@@ -26,13 +26,31 @@ class DNA:
         brightness_shift = random.randint(minRange, maxRange)
         return np.clip(brush.astype(int) + brightness_shift, 0, 255).astype(np.uint8)
     
-    def change_brush_color(self):
+    def change_brush_color(self, min, max):
         # Generar un tono de gris aleatorio
-        random_gray = random.randint(0, 255)
+        random_gray = random.randint(min, max)
         colored_brush = np.full_like(self.brush, random_gray)
         self.color = colored_brush
         # Crear una máscara usando el color negro como fondo
         mask = cv2.threshold(self.brush, 1, 255, cv2.THRESH_BINARY)[1]
+        return colored_brush, mask
+    
+    def change_brush_color(self, parent1_color, parent2_color):
+        # Calcular el color predominante de los padres
+        parent1_color_mean = np.mean(parent1_color)
+        parent2_color_mean = np.mean(parent2_color)
+        
+        # Calcular el rango basado en los colores predominantes de los padres
+        min_color = min(parent1_color_mean, parent2_color_mean)
+        max_color = max(parent1_color_mean, parent2_color_mean)
+        
+        # Generar un tono de gris aleatorio dentro del rango
+        random_gray = random.randint(int(min_color), int(max_color))
+        
+        colored_brush = np.full_like(self.brush, random_gray)
+        
+        mask = cv2.threshold(self.brush, 1, 255, cv2.THRESH_BINARY)[1]
+        
         return colored_brush, mask
     
     def generate_random_position(self, canvas_height, canvas_width):
@@ -43,7 +61,7 @@ class DNA:
     def calculate_fitness(self):
         self.fitness = calcularFitnes(self.color,self.xy_position,img)
     
-    def mutate(self, canvas):
+    """def mutate(self, canvas):
         mutation_type = random.choice(["brush", "position", "both"])
 
         if mutation_type in ['brush', 'both']:
@@ -59,7 +77,7 @@ class DNA:
 
     def mutate2(self, canvas):
         mutation_type = random.choice(["brush", "position", "both"])
-        new_color, _ = self.change_brush_color()
+        new_color, _ = self.change_brush_color(0,255)
 
         if mutation_type in ['brush', 'both']:
             self.brush = random.choice([self.resize_brush(self.brush, 0.5, 1), new_color])
@@ -70,7 +88,7 @@ class DNA:
                                 max(0, min(self.xy_position[1] + displacement[1], canvas.height - self.brush.shape[0])))
 
         # Asegurarse de actualizar también la máscara después de la mutación
-        _, self.mask = self.change_brush_color()
+        _, self.mask = self.change_brush_color(0,255)
         
     def generate_mask_from_brush(self, brush):
         # Crear una máscara del mismo tamaño que la brocha, utilizando el color negro como fondo
@@ -107,7 +125,7 @@ class DNA:
             child.xy_position = (max(0, min(parent2.xy_position[0] + displacement[0], canvas.width - child.brush.shape[1])),
                                 max(0, min(parent2.xy_position[1] + displacement[1], canvas.height - child.brush.shape[0])))
 
-        return child
+        return child"""
 
 class Canvas:
     def __init__(self, img):
@@ -172,21 +190,58 @@ class GeneticAlgorithm:
             for _ in range(random.randint(10,20)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
-                child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
-                child.resize_brush(child.brush, 0.5, 1.5)
-                new_population.append(child)
+                #child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
+                #child.resize_brush(child.brush, 0.5, 1.5)
+                new_population.append(self.crossover(parent1, parent2))
 
                 if random.random() < 0.1:
                     print("Hijo mutará") # Borrarlo después 
-                    new_individual = DNA(self.target_image, self.brushesList)
-                    new_individual.generate_random_position(self.canvas.height, self.canvas.width)
-                    new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
-                    self.current_population.append(new_individual)
-                    new_population.append(new_individual)
+                    #new_individual = DNA(self.target_image, self.brushesList)
+                    #new_individual.generate_random_position(self.canvas.height, self.canvas.width)
+                    #new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
+                    new_population.append(self.mutate())
             self.current_population = new_population
             self.canvas.paint(self.current_population)
-            
 
+    def generate_mask_from_brush(self, brush):
+        # Crear una máscara del mismo tamaño que la brocha, utilizando el color negro como fondo
+        mask = cv2.threshold(brush, 1, 255, cv2.THRESH_BINARY)[1]
+        return mask
+    
+    def crossover(self, parent1, parent2):
+        child = DNA(self.target_image, self.brushesList)
+        child.brush = child.resize_brush(random.choice(self.brushesList), 0.1, 0.3)
+        
+        # Redimensionar las imágenes de los padres para que tengan las mismas dimensiones
+        common_height = min(parent1.color.shape[0], parent2.color.shape[0])
+        common_width = min(parent1.color.shape[1], parent2.color.shape[1])
+
+        parent1_color_resized = cv2.resize(parent1.color, (common_width, common_height))
+        parent2_color_resized = cv2.resize(parent2.color, (common_width, common_height))
+
+        # Aplicar crossover en el color del pincel
+        child.brush, child.mask = child.change_brush_color(parent1_color_resized, parent2_color_resized)
+
+        self.fitness = None
+
+        # Heredar la posición de uno de los padres con un desplazamiento aleatorio dentro del lienzo
+        displacement = (random.randint(-70, 70), random.randint(-70, 70)) 
+        if random.random() < 0.5: 
+            child.xy_position = (max(0, min(parent1.xy_position[0] + displacement[0], self.canvas.width - child.brush.shape[1])),
+                                max(0, min(parent1.xy_position[1] + displacement[1], self.canvas.height - child.brush.shape[0])))
+        else:
+            child.xy_position = (max(0, min(parent2.xy_position[0] + displacement[0], self.canvas.width - child.brush.shape[1])),
+                                max(0, min(parent2.xy_position[1] + displacement[1], self.canvas.height - child.brush.shape[0])))
+            
+        return child
+
+    def mutate(self):
+        new_individual = DNA(self.target_image, self.brushesList)
+        new_individual.generate_random_position(self.canvas.height, self.canvas.width)
+        new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
+        return new_individual
+    
+    
 # Carga todos los brochazos en un array
 def load_brushes():
     brushes = []
