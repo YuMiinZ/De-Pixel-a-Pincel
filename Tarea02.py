@@ -7,7 +7,7 @@ from fiteness import *
 class DNA:
     def __init__(self, targetImage, brushesList):  
         self.target_image = cv2.cvtColor(targetImage, cv2.COLOR_BGR2GRAY)
-        self.brush = self.resize_brush(random.choice(brushesList), 0.1, 0.3)
+        self.brush = self.resize_brush(random.choice(brushesList), 0.01, 0.1)
         #self.color = self.change_color(self.brush, -200, 200)
         self.color, self.mask = self.change_brush_color(0,255)
         self.brush = self.color
@@ -149,7 +149,7 @@ class Canvas:
 
         # Muestra el lienzo después de pintar toda la población
         cv2.imshow('Image', self.canvas)
-        cv2.waitKey(0)
+        cv2.waitKey(10)
 
 class GeneticAlgorithm:
     def __init__(self, targetImage, populationSize, maxGenerations, brushesList):
@@ -187,15 +187,15 @@ class GeneticAlgorithm:
                 print(f"  Mejor individuo {idx}: Fitness = {individual.fitness}")"""
 
             new_population = []
-            for _ in range(random.randint(10,20)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
+            for _ in range(random.randint(110,120)): #Aleatoriedad para la cantidad de individuos que se generarán para las próximas generaciones
                 parent1 = random.choice(best_individuals)
                 parent2 = random.choice(best_individuals)
                 #child = parent1.crossover(parent1, parent2, self.target_image, self.brushesList, self.canvas)
                 #child.resize_brush(child.brush, 0.5, 1.5)
                 new_population.append(self.crossover(parent1, parent2))
 
-                if random.random() < 0.1:
-                    print("Hijo mutará") # Borrarlo después 
+                if random.random() < 0.01:
+                    #print("Hijo mutará") # Borrarlo después 
                     #new_individual = DNA(self.target_image, self.brushesList)
                     #new_individual.generate_random_position(self.canvas.height, self.canvas.width)
                     #new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
@@ -210,7 +210,7 @@ class GeneticAlgorithm:
     
     def crossover(self, parent1, parent2):
         child = DNA(self.target_image, self.brushesList)
-        child.brush = child.resize_brush(random.choice(self.brushesList), 0.1, 0.3)
+        child.brush = child.resize_brush(random.choice(self.brushesList), 0.01, 0.1)
         
         # Redimensionar las imágenes de los padres para que tengan las mismas dimensiones
         common_height = min(parent1.color.shape[0], parent2.color.shape[0])
@@ -225,7 +225,7 @@ class GeneticAlgorithm:
         self.fitness = None
 
         # Heredar la posición de uno de los padres con un desplazamiento aleatorio dentro del lienzo
-        displacement = (random.randint(-70, 70), random.randint(-70, 70)) 
+        displacement = (random.randint(-100, 100), random.randint(-100, 100)) 
         if random.random() < 0.5: 
             child.xy_position = (max(0, min(parent1.xy_position[0] + displacement[0], self.canvas.width - child.brush.shape[1])),
                                 max(0, min(parent1.xy_position[1] + displacement[1], self.canvas.height - child.brush.shape[0])))
@@ -238,7 +238,7 @@ class GeneticAlgorithm:
     def mutate(self):
         new_individual = DNA(self.target_image, self.brushesList)
         new_individual.generate_random_position(self.canvas.height, self.canvas.width)
-        new_individual.resize_brush(new_individual.brush, 0.1, 0.3)
+        new_individual.resize_brush(new_individual.brush, 0.01, 0.1)
         return new_individual
     
     
@@ -261,6 +261,6 @@ def start(targetImage, populationSize, maxGenerations):
     startGeneticAlgorithm.initialize_population()
 
 img = "Images/PALETA.jpg"
-populationSize = 30
-maxGenerations = 1000
+populationSize = 100
+maxGenerations = 4000
 start(img, populationSize, maxGenerations)
