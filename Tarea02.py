@@ -2,7 +2,7 @@ import numpy as np
 import os
 import random
 import cv2
-from fiteness import *
+from fitness import *
 
 class DNA:
     def __init__(self, targetImage, brushesList):  
@@ -54,7 +54,7 @@ class DNA:
         self.xy_position = (random.randint(0, max_x), random.randint(0, max_y))
     
     def calculate_fitness(self):
-        self.fitness = calcularFitnes(self.color,self.xy_position,img)
+        self.fitness = calcularFitness(self.color,self.xy_position,img)
 
 class Canvas:
     def __init__(self, img):
