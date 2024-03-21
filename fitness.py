@@ -45,7 +45,7 @@ def extractColor(matriz):
     return extractColor
 
 
-def calcularFitnes(matrizBrush,posicionBrush,img):#posicionBrush con coordenadas x,y
+def calcularFitness(matrizBrush,posicionBrush,img):#posicionBrush con coordenadas x,y
     #print("color:------------------------------------------------------------------------------------")
     colorBrush = extractColor(matrizBrush)
     #print(colorBrush)
